@@ -5,8 +5,8 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -82,9 +82,6 @@ public class MainActivity extends AppCompatActivity {
 
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
-//                String locationString = "Latitude: " + latitude + ", Longitude: " + longitude + ", Time: " + datetime;
-//                locationList.add(locationString);
-
                 Date date;
                 try {
                     date = dateFormat.parse(datetime);
@@ -158,6 +155,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void startLocationService() {
         Intent serviceIntent = new Intent(this, LocationService.class);
-        startForegroundService(serviceIntent);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
     }
 }

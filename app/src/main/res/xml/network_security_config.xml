@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system default CA -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- Allow cleartext traffic for specific domains -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">89.116.134.237</domain>
+    </domain-config>
+</network-security-config>

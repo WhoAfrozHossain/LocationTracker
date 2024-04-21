@@ -1,5 +1,6 @@
 package com.androidsystem.locationtracker.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,15 +8,17 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.androidsystem.locationtracker.R;
 
 import java.util.ArrayList;
 
 public class CustomListAdapter extends ArrayAdapter<String> {
-    private Context mContext;
-    private ArrayList<String> mLatitudeList;
-    private ArrayList<String> mLongitudeList;
-    private ArrayList<String> mTimeList;
+    private final Context mContext;
+    private final ArrayList<String> mLatitudeList;
+    private final ArrayList<String> mLongitudeList;
+    private final ArrayList<String> mTimeList;
 
     public CustomListAdapter(Context context, ArrayList<String> latitudeList, ArrayList<String> longitudeList, ArrayList<String> timeList) {
         super(context, R.layout.location_list_item);
@@ -30,10 +33,11 @@ public class CustomListAdapter extends ArrayAdapter<String> {
         return mLatitudeList.size();
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.location_list_item, parent, false);
+        @SuppressLint("ViewHolder") View rowView = inflater.inflate(R.layout.location_list_item, parent, false);
 
         TextView latitudeTextView = rowView.findViewById(R.id.latitudeTextView);
         TextView longitudeTextView = rowView.findViewById(R.id.longitudeTextView);
