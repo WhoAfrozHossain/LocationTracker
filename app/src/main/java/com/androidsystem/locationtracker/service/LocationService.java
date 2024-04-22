@@ -38,40 +38,26 @@ import java.util.Locale;
 
 public class LocationService extends Service {
 
-    private static DBHelper dbHelper;
+    private static final String CHANNEL_ID = "LocationServiceChannel";
+    private static final long LOCATION_UPDATE_INTERVAL = 4000; // 4 seconds
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 0; // 0 meters
     private static final String baseUrl = "http://89.116.134.237/";
     private LocationManager locationManager;
-    private LocationListener listener;
+    private LocationListener locationListener;
+    private static DBHelper dbHelper;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        dbHelper = new DBHelper(LocationService.this);
+        dbHelper = new DBHelper(this);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        listener = new LocationListener() {
-            @Override
-            public void onLocationChanged(@NonNull Location location) {
-                // Log location or store in SQLite
-                dbHelper.insertLocation(location.getLatitude(), location.getLongitude());
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-            @Override
-            public void onProviderEnabled(@NonNull String provider) {}
-
-            @Override
-            public void onProviderDisabled(@NonNull String provider) {}
-        };
+        locationListener = new MyLocationListener();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("locationService", "Location Service", NotificationManager.IMPORTANCE_DEFAULT);
-            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(channel);
-            Notification notification = new Notification.Builder(this, "locationService")
+            createNotificationChannel();
+            Notification notification = new Notification.Builder(this, CHANNEL_ID)
                     .setContentTitle("Location Service")
                     .setContentText("Running")
                     .build();
@@ -79,14 +65,14 @@ public class LocationService extends Service {
         }
 
         try {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 4000, 5, listener);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL, MIN_DISTANCE_CHANGE_FOR_UPDATES, locationListener);
         } catch (SecurityException e) {
             e.printStackTrace();
         }
     }
 
-    private Handler handler = new Handler();
-    private Runnable runnable = new Runnable() {
+    private final Handler handler = new Handler();
+    private final Runnable runnable = new Runnable() {
         @Override
         public void run() {
             // Perform background tasks here
@@ -105,14 +91,30 @@ public class LocationService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(runnable);
-        locationManager.removeUpdates(listener);
+        if (locationManager != null) {
+            handler.removeCallbacks(runnable);
+        }
+        if (locationManager != null) {
+            locationManager.removeUpdates(locationListener);
+        }
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Location Service Channel",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(serviceChannel);
+        }
     }
 
     private void sendDataToServer() {
@@ -126,9 +128,6 @@ public class LocationService extends Service {
                 @SuppressLint("Range") String datetime = cursor.getString(cursor.getColumnIndex(DBHelper.COLUMN_CREATED_AT));
 
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
-//                String locationString = "Latitude: " + latitude + ", Longitude: " + longitude + ", Time: " + datetime;
-//                locationList.add(locationString);
 
                 Date date;
                 try {
@@ -185,10 +184,10 @@ public class LocationService extends Service {
 
                         dbHelper.deleteLocation(columnId);
                         Log.e("Location Data", "Response from server: " + response.toString());
-//                        showToast("Response from server: " + response.toString());
+//                        Toast.makeText(LocationService.this, "Response from server: " + response.toString(), Toast.LENGTH_LONG).show();
                     } else {
-//                        showToast("Server returned error: " + responseCode);
                         Log.e("Location Data", "Server returned error: " + responseCode);
+//                        Toast.makeText(LocationService.this, "Server returned error: " + responseCode, Toast.LENGTH_LONG).show();
                     }
 
                     // Close the connection
@@ -210,4 +209,22 @@ public class LocationService extends Service {
 //        });
 //    }
 
+    private static class MyLocationListener implements LocationListener {
+        @Override
+        public void onLocationChanged(@NonNull Location location) {
+            // Log location or store in SQLite
+            dbHelper.insertLocation(location.getLatitude(), location.getLongitude());
+//            Toast.makeText(LocationService.this, "Location Inserted: " +
+//                    location.getLatitude() + " - " + location.getLongitude(), Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+        @Override
+        public void onProviderEnabled(@NonNull String provider) {}
+
+        @Override
+        public void onProviderDisabled(@NonNull String provider) {}
+    }
 }

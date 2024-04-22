@@ -31,7 +31,8 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int PERMISSIONS_REQUEST = 100;
+    private static final int PERMISSIONS_REQUEST_FOREGROUND = 1001;
+    private static final int PERMISSIONS_REQUEST_BACKGROUND = 1002;
 
     private DBHelper dbHelper;
 
@@ -111,43 +112,62 @@ public class MainActivity extends AppCompatActivity {
             // Request foreground location permissions
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    PERMISSIONS_REQUEST);
-        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
-                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Request background location permission separately
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
-                    PERMISSIONS_REQUEST);
+                    PERMISSIONS_REQUEST_FOREGROUND);
         } else {
-            // All necessary permissions are granted
-            startLocationService();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // Request background location permission separately
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                        PERMISSIONS_REQUEST_BACKGROUND);
+            } else {
+                // All necessary permissions are granted
+                startLocationService();
+            }
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSIONS_REQUEST) {
-            if (grantResults.length > 0) {
-                boolean allPermissionsGranted = true;
-                for (int i = 0; i < permissions.length; i++) {
-                    if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
-                        allPermissionsGranted = false;
-                        Toast.makeText(this, "Permission denied for: " + permissions[i], Toast.LENGTH_SHORT).show();
-                        break;
-                    }
-                }
-                if (allPermissionsGranted) {
-                    // Check if background permission needs to be requested
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
-                            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        ActivityCompat.requestPermissions(this,
-                                new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
-                                PERMISSIONS_REQUEST);
-                    } else {
-                        startLocationService();
-                    }
-                }
+//        if (requestCode == PERMISSIONS_REQUEST) {
+//            if (grantResults.length > 0) {
+//                boolean allPermissionsGranted = true;
+//                for (int i = 0; i < permissions.length; i++) {
+//                    if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+//                        allPermissionsGranted = false;
+//                        Toast.makeText(this, "Permission denied for: " + permissions[i], Toast.LENGTH_SHORT).show();
+//                        break;
+//                    }
+//                }
+//                if (allPermissionsGranted) {
+//                    // Check if background permission needs to be requested
+//                    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+//                            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//                        ActivityCompat.requestPermissions(this,
+//                                new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+//                                PERMISSIONS_REQUEST);
+//                    } else {
+//                        startLocationService();
+//                    }
+//                }
+//            }
+//        }
+        if (requestCode == PERMISSIONS_REQUEST_FOREGROUND) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Foreground permissions granted
+                checkPermissions(); // Check for background permissions if needed
+            } else {
+                // Foreground permissions denied
+                Toast.makeText(this, "Foreground location permission denied", Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == PERMISSIONS_REQUEST_BACKGROUND) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Background permission granted
+                startLocationService();
+            } else {
+                // Background permission denied
+                Toast.makeText(this, "Background location permission denied", Toast.LENGTH_SHORT).show();
             }
         }
     }
