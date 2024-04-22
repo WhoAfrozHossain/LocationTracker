@@ -40,7 +40,7 @@ public class LocationService extends Service {
 
     private static final String CHANNEL_ID = "LocationServiceChannel";
     private static final long LOCATION_UPDATE_INTERVAL = 4000; // 4 seconds
-    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 0; // 0 meters
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 5; // 0 meters
     private static final String baseUrl = "http://89.116.134.237/";
     private LocationManager locationManager;
     private LocationListener locationListener;
